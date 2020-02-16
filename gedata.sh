@@ -1,26 +1,20 @@
 #!/bin/bash
 #/--------------------------------------------------------------------------------------------------------|  www.vdm.io  |------/
-#    __      __       _     _____                 _                                  _     __  __      _   _               _
-#    \ \    / /      | |   |  __ \               | |                                | |   |  \/  |    | | | |             | |
-#     \ \  / /_ _ ___| |_  | |  | | _____   _____| | ___  _ __  _ __ ___   ___ _ __ | |_  | \  / | ___| |_| |__   ___   __| |
-#      \ \/ / _` / __| __| | |  | |/ _ \ \ / / _ \ |/ _ \| '_ \| '_ ` _ \ / _ \ '_ \| __| | |\/| |/ _ \ __| '_ \ / _ \ / _` |
-#       \  / (_| \__ \ |_  | |__| |  __/\ V /  __/ | (_) | |_) | | | | | |  __/ | | | |_  | |  | |  __/ |_| | | | (_) | (_| |
-#        \/ \__,_|___/\__| |_____/ \___| \_/ \___|_|\___/| .__/|_| |_| |_|\___|_| |_|\__| |_|  |_|\___|\__|_| |_|\___/ \__,_|
-#                                                        | |
-#                                                        |_|
-#/-------------------------------------------------------------------------------------------------------------------------------/
 #
 #	@version		1.0.0
-#	@build			21st July, 2017
-#	@package		Dynamic IP
+#	@build			16th Feb, 2020
+#	@package		setninal
 #	@author			Llewellyn van der Merwe <https://github.com/Llewellynvdm>
-#	@copyright		Copyright (C) 2015. All Rights Reserved
+#	@copyright	Copyright (C) 2020. All Rights Reserved
 #	@license		GNU/GPL Version 2 or later - http://www.gnu.org/licenses/gpl-2.0.html
 #
 #/-----------------------------------------------------------------------------------------------------------------------------/
 
 ############################ GLOBAL ##########################
-ACTION="setip"
+ACTION="gedata"
+OWNER="Llewellynvdm"
+NAME="sentinel-client"
+HOST="https://www.vdm.io"
 ######### DUE TO NOT BEING ABLE TO INCLUDE DYNAMIC ###########
 
 #################### UPDATE TO YOUR NEEDS ####################
@@ -29,8 +23,8 @@ ACTION="setip"
 ##############               CONFIG                 ##########
 ##############                                      ##########
 ##############################################################
-REPOURL="https://raw.githubusercontent.com/vdm-io/dynamic-ip/master/"
-VDMIPSERVER="https://www.vdm.io/$ACTION"
+REPOURL="https://raw.githubusercontent.com/${OWNER}/${NAME}/master/"
+VDMIPSERVER="${HOST}/${ACTION}"
 
 ##############################################################
 ##############                                      ##########
@@ -41,14 +35,18 @@ function main () {
 	## set time for this run
 	echoTweak "$ACTION on $Datetimenow"
 	echo "started"
+	# get this server IP
+	HOSTIP="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 	## make sure cron is set
 	setCron
 	## get the local server key
 	getLocalKey
 	## check access (set if not ready)
 	setAccessToken
-	## update IP
-	setIP
+	## get the data
+	getData
+	## Work with the data
+	storeLocalData
 }
 
 ##############################################################
@@ -62,6 +60,9 @@ VDMHOME=~/
 VDMSCRIPT="${REPOURL}$ACTION.sh"
 VDMSERVERKEY=''
 TRUE=1
+FALSE=0
+HOSTIP=''
+THEIPS=''
 
 ##############################################################
 ##############                                      ##########
@@ -149,34 +150,46 @@ function getLocalKey () {
 
 function setAccessToken () {
 	# check if vdm access was set
-	accessToke=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "VDM-KEY: $VDMSERVERKEY" --silent $VDMIPSERVER)
+	accessToke=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "VDM-KEY: $VDMSERVERKEY" -H "VDM-HOST-IP: $HOSTIP" --silent $VDMIPSERVER)
 
 	if [[ "$accessToke" != "$TRUE" ]]; then
 		read -s -p "Please enter your VDM access key: " vdmAccessKey
 		echo ""
 		echoTweak "One moment while we set your access to the VDM system..."
-		resultAccess=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "VDM-TRUST: $vdmAccessKey" -H "VDM-KEY: $VDMSERVERKEY" --silent $VDMIPSERVER)
+		resultAccess=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "VDM-TRUST: $vdmAccessKey" -H "VDM-KEY: $VDMSERVERKEY" -H "VDM-HOST-IP: $HOSTIP" --silent $VDMIPSERVER)
 		if [[ "$resultAccess" != "$TRUE" ]]; then
 			echo "YOUR VDM ACCESS KEY IS INCORRECT! >> $resultAccess"
 			exit 1
 		fi
 		echo "Done"
 	else
-		echo "Access granted to the VDM system."
+		echoTweak "Access granted to the VDM system."
+		echo "Done"
 	fi
 }
 
-function setIP () {
-	# get this server IP
-	IPNOW="$(dig +short myip.opendns.com @resolver1.opendns.com)"
-	# store the IP in the HOSTNAME file
-	echoTweak "Setting/Update the Dynamic IP..."
-	resultUpdate=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "VDM-KEY: $VDMSERVERKEY" -H "VDM-IP: $IPNOW" --silent $VDMIPSERVER)
-	if [[ "$resultUpdate" != "$TRUE" ]]; then
-		echo "YOUR SERVER KEY IS INCORRECT! >> $resultUpdate"
+function getData () {
+	# getting the station data
+	echoTweak "Getting the station data..."
+	THEDATA=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "VDM-KEY: $VDMSERVERKEY" -H "VDM-HOST-IP: $HOSTIP"  -H "VDM-GET: 1" --silent $VDMIPSERVER)
+	# the data
+	if [[ "$THEDATA" == "$FALSE" || ${#THEDATA} -lt 15 ]]; then
+		echo "No data FOUND! "
 		exit 1
 	fi
 	echo "Done"
+}
+
+function storeLocalData () {
+	# load data
+	readarray -t rows <<< "$THEDATA"
+	for rr in "${rows[@]}" ; do
+		row=( $rr )
+		if [[ ${#row[@]} == 3 ]]; then
+			# start =>>>
+			echoTweak "This work needs to still be done...."
+		fi
+	done
 }
 
 ##############################################################
