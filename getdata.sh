@@ -11,10 +11,10 @@
 #/-----------------------------------------------------------------------------------------------------------------------------/
 
 ############################ GLOBAL ##########################
-ACTION="gedata"
-OWNER="Llewellynvdm"
-NAME="sentinel-client"
-HOST="https://www.vdm.io"
+ACTION="setdata"
+OWNER="sentinel-mx"
+NAME="client"
+HOST="https://sentinel.our.mx/"
 ######### DUE TO NOT BEING ABLE TO INCLUDE DYNAMIC ###########
 
 #################### UPDATE TO YOUR NEEDS ####################

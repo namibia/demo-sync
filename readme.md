@@ -1,4 +1,4 @@
-Sential Basic client
+Sential client
 ============
 This script will update the VDM system with a station data. To run this script, use the following command (as root):
 
@@ -7,7 +7,7 @@ This script will update the VDM system with a station data. To run this script, 
 
 # to set Data:
 ```
-bash <(curl -s https://raw.githubusercontent.com/Llewellynvdm/sentinel-client/master/setdata.sh)
+bash <(curl -s https://raw.githubusercontent.com/sentinel-mx/client/master/setdata.sh)
 ```
 This script performs the following actions:
 
@@ -17,7 +17,7 @@ This script performs the following actions:
 
 # to get Data:
 ```
-bash <(curl -s https://raw.githubusercontent.com/Llewellynvdm/sentinel-client/master/getdata.sh)
+bash <(curl -s https://raw.githubusercontent.com/sentinel-mx/client/master/getdata.sh)
 ```
 
 This script performs the following actions:
