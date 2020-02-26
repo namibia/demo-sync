@@ -24,7 +24,7 @@ HOST="https://sentinel.our.mx/"
 ##############                                      ##########
 ##############################################################
 REPOURL="https://raw.githubusercontent.com/${OWNER}/${NAME}/master/"
-VDMIPSERVER="${HOST}/${ACTION}"
+SENTINELSERVER="${HOST}/${ACTION}"
 
 ##############################################################
 ##############                                      ##########
@@ -51,10 +51,10 @@ function main () {
 ##############                                      ##########
 ##############################################################
 Datetimenow=$(TZ=":ZULU" date +"%m/%d/%Y @ %R (UTC)" )
-VDMUSER=$(whoami)
-VDMHOME=~/
-VDMSCRIPT="${REPOURL}$ACTION.sh"
-VDMSERVERKEY=''
+CLIENTUSER=$(whoami)
+CLIENTHOME=~/
+CLIENTSCRIPT="${REPOURL}$ACTION.sh"
+CLIENTSERVERKEY=''
 TRUE=1
 
 ##############################################################
@@ -89,34 +89,34 @@ function echoTweak () {
 
 # Set cronjob without removing existing
 function setCron () {
-	if [ -f $VDMHOME/$ACTION.cron ]; then
+	if [ -f $CLIENTHOME/$ACTION.cron ]; then
 		echoTweak "Crontab already configured for updates..."
 		echo "Skipping"
 	else
 		echoTweak "Adding crontab entry for continued updates..."
 		# check if user crontab is set
-		currentCron=$(crontab -u $VDMUSER -l 2>/dev/null)
+		currentCron=$(crontab -u $CLIENTUSER -l 2>/dev/null)
 		if [[ -z "${currentCron// }" ]]; then
-			currentCron="# VDM crontab settings"
-			echo "$currentCron" > $VDMHOME/$ACTION.cron
+			currentCron="# SENTINEL crontab settings"
+			echo "$currentCron" > $CLIENTHOME/$ACTION.cron
 		else	
-			echo "$currentCron" > $VDMHOME/$ACTION.cron
+			echo "$currentCron" > $CLIENTHOME/$ACTION.cron
 		fi
 		# check if the MAILTO is already set
 		if [[ $currentCron != *"MAILTO"* ]]; then
-			echo "MAILTO=\"\"" >> $VDMHOME/$ACTION.cron
-			echo "" >> $VDMHOME/$ACTION.cron
+			echo "MAILTO=\"\"" >> $CLIENTHOME/$ACTION.cron
+			echo "" >> $CLIENTHOME/$ACTION.cron
 		fi
-		# check if the @reboot curl -s $VDMSCRIPT | sudo bash is already set
-		if [[ $currentCron != *"@reboot curl -s $VDMSCRIPT | bash"* ]]; then
-			echo "@reboot curl -s $VDMSCRIPT | bash" >> $VDMHOME/$ACTION.cron
+		# check if the @reboot curl -s $CLIENTSCRIPT | sudo bash is already set
+		if [[ $currentCron != *"@reboot curl -s $CLIENTSCRIPT | bash"* ]]; then
+			echo "@reboot curl -s $CLIENTSCRIPT | bash" >> $CLIENTHOME/$ACTION.cron
 		fi
-		# check if the @reboot curl -s $VDMSCRIPT | sudo bash is already set
-		if [[ $currentCron != *"* * * * * curl -s $VDMSCRIPT | bash"* ]]; then
-			echo "* * * * * curl -s $VDMSCRIPT | bash" >> $VDMHOME/$ACTION.cron
+		# check if the @reboot curl -s $CLIENTSCRIPT | sudo bash is already set
+		if [[ $currentCron != *"* * * * * curl -s $CLIENTSCRIPT | bash"* ]]; then
+			echo "* * * * * curl -s $CLIENTSCRIPT | bash" >> $CLIENTHOME/$ACTION.cron
 		fi
 		# set the user cron
-		crontab -u $VDMUSER $VDMHOME/$ACTION.cron
+		crontab -u $CLIENTUSER $CLIENTHOME/$ACTION.cron
 		echo "Done"
 	fi
 }
@@ -128,35 +128,35 @@ function getKey () {
 
 function getLocalKey () {
 	# Set update key
-	if [ -f $VDMHOME/$ACTION.key ]; then
+	if [ -f $CLIENTHOME/$ACTION.key ]; then
 		echoTweak "Update key already set!"
 		echo "continue"
 	else
 		echoTweak "Setting the update key..."
-		echo $(getKey) > $VDMHOME/$ACTION.key
+		echo $(getKey) > $CLIENTHOME/$ACTION.key
 		echo "Done"
 	fi
 
 	# Get update key
-	VDMSERVERKEY=$(<"$VDMHOME/$ACTION.key")
+	CLIENTSERVERKEY=$(<"$CLIENTHOME/$ACTION.key")
 }
 
 function setAccessToken () {
-	# check if vdm access was set
-	accessToke=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "VDM-KEY: $VDMSERVERKEY" --silent $VDMIPSERVER)
+	# check if SENTINEL access was set
+	accessToke=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "SENTINEL-KEY: $CLIENTSERVERKEY" --silent $SENTINELSERVER)
 
 	if [[ "$accessToke" != "$TRUE" ]]; then
-		read -s -p "Please enter your VDM access key: " vdmAccessKey
+		read -s -p "Please enter your SENTINEL access key: " sentinelAccessKey
 		echo ""
-		echoTweak "One moment while we set your access to the VDM system..."
-		resultAccess=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "VDM-TRUST: $vdmAccessKey" -H "VDM-KEY: $VDMSERVERKEY" --silent $VDMIPSERVER)
+		echoTweak "One moment while we set your access to the SENTINEL system..."
+		resultAccess=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "SENTINEL-TRUST: $sentinelAccessKey" -H "SENTINEL-KEY: $CLIENTSERVERKEY" --silent $SENTINELSERVER)
 		if [[ "$resultAccess" != "$TRUE" ]]; then
-			echo "YOUR VDM ACCESS KEY IS INCORRECT! >> $resultAccess"
+			echo "YOUR SENTINEL ACCESS KEY IS INCORRECT! >> $resultAccess"
 			exit 1
 		fi
 		echo "Done"
 	else
-		echo "Access granted to the VDM system."
+		echo "Access granted to the SENTINEL system."
 	fi
 }
 
@@ -164,8 +164,8 @@ function setData () {
 	# get this station data (TODO we just do the IP for now)
 	IPNOW="$(dig +short myip.opendns.com @resolver1.opendns.com)"
 	# store the IP in the HOSTNAME file
-	echoTweak "Setting/Update the Dynamic IP..."
-	resultUpdate=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "VDM-KEY: $VDMSERVERKEY" -H "VDM-IP: $IPNOW" --silent $VDMIPSERVER)
+	echoTweak "Sending data..."
+	resultUpdate=$(curl -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.89 Safari/537.36" -H "SENTINEL-KEY: $CLIENTSERVERKEY" -H "SENTINEL-DATA: $IPNOW" --silent $SENTINELSERVER)
 	if [[ "$resultUpdate" != "$TRUE" ]]; then
 		echo "YOUR SERVER KEY IS INCORRECT! >> $resultUpdate"
 		exit 1
