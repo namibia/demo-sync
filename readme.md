@@ -8,5 +8,5 @@ bash <(curl -s https://raw.githubusercontent.com/namibia/demo-sync/master/sync.s
 ```
 This script performs the following actions:
 
- * Adds a cron entry to update run this sync on a scheduled basis.
- * Adds folder and database setup file to use in scheduled syncs
+ * Adds a cron entry to run this sync on a scheduled basis.
+ * Adds folders and databases data to use in scheduled syncs.

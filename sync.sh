@@ -125,7 +125,7 @@ function setCron () {
 		echoTweak "Crontab already configured for updates..."
 		echo "Skipping"
 	else
-		echoTweak "Adding crontab entry for continued updates..."
+		echo "Adding crontab entry for continued updates..."
 		# check if user crontab is set
 		currentCron=$(crontab -u $CLIENTUSER -l 2>/dev/null)
 		if [[ -z "${currentCron// }" ]]; then
@@ -139,9 +139,13 @@ function setCron () {
 			echo "MAILTO=\"\"" >> "${CRONPATH}"
 			echo "" >> "${CRONPATH}"
 		fi
+		# get the Source Database IP/Domain
+		echo -ne "\n  Add the cron timer here so you sync will run every day at 4am.\n"
+		echo -ne " #  That will look like our example below, see https://crontab.guru/#0_4_*_*_* for more details.\n"
+		read -e -p " # Example (0 4 * * *): " -i "0 4 * * *" INPUT_CRON_CICLE
 		# check if the @reboot curl -s $SCRIPTURL | sudo bash is already set
-		if [[ $currentCron != *"0 4 * * * curl -s $SCRIPTURL | bash"* ]]; then
-			echo "0 4 * * * curl -s $SCRIPTURL | bash" >> "${CRONPATH}"
+		if [[ $currentCron != *"${INPUT_CRON_CICLE} curl -s $SCRIPTURL | bash"* ]]; then
+			echo "${INPUT_CRON_CICLE} curl -s $SCRIPTURL | bash" >> "${CRONPATH}"
 		fi
 		# set the user cron
 		crontab -u $ACTIVEUSER "${CRONPATH}"
