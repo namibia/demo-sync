@@ -15,6 +15,10 @@
 ##############################################################
 command -v rsync >/dev/null 2>&1 || { echo >&2 "We require rsync for this script to run, but it's not installed.  Aborting."; exit 1; }
 command -v crontab >/dev/null 2>&1 || { echo >&2 "We require crontab for this script to run, but it's not installed.  Aborting."; exit 1; }
+command -v md5sum >/dev/null 2>&1 || { echo >&2 "We require md5sum for this script to run, but it's not installed.  Aborting."; exit 1; }
+command -v awk >/dev/null 2>&1 || { echo >&2 "We require awk for this script to run, but it's not installed.  Aborting."; exit 1; }
+command -v realpath >/dev/null 2>&1 || { echo >&2 "We require realpath for this script to run, but it's not installed.  Aborting."; exit 1; }
+command -v stat >/dev/null 2>&1 || { echo >&2 "We require stat for this script to run, but it's not installed.  Aborting."; exit 1; }
 
 ############################ GLOBAL ##########################
 ACTION="sync"
@@ -105,6 +109,11 @@ function runSync () {
 # little repeater
 function repeat () {
 	head -c $1 < /dev/zero | tr '\0' $2
+}
+
+# md5 strings
+function setMD5() {
+  echo -n $1 | md5sum | awk '{print $1}'
 }
 
 # little echo tweak
@@ -330,11 +339,15 @@ function getSyncFolders () {
 			# start again
 			exit 1
 		fi
+		# must set realpath
+	  source_folder=$(realpath -s "${INPUT_SOURCE_PATH}")
+	  target_folder=$(realpath -s "${INPUT_TARGET_PATH}")
 		# add to the file
-		echo "${INPUT_SOURCE_PATH}	${INPUT_TARGET_PATH}" >> "$1"
-		# check if there are files or folders to exclude
-		SOURCE_OWNER=$(stat -c '%U' "${INPUT_SOURCE_PATH}")
-		getExcluded "${EXCLUDEPATH}${SOURCE_OWNER}"
+		echo "${source_folder}	${target_folder}" >> "$1"
+    # get hash
+    HASH=$(setMD5 "${source_folder}${target_folder}")
+    # check if exclusion is needed
+		getExcluded "${EXCLUDEPATH}${HASH}"
 		# check if another should be added
 		echo ""
 		echo -ne "\n Would you like to add another set of sync folders? [y/N]: "
@@ -415,17 +428,19 @@ function syncFolders (){
 
 ### sync folder ###
 function syncFolder (){
-	local source_folder=$(realpath -s $1)
-	local target_folder=$(realpath -s $2)
+	local source_folder="$1"
+	local target_folder="$2"
   # get the owners
 	local source_owner=$(stat -c '%U' "${source_folder}")
 	local target_owner=$(stat -c '%U' "${target_folder}")
   # give the user log data
 	echoTweak "Syncing folders of [${source_owner}] with [${target_owner}]..."
+	# get hash
+	HASH=$(setMD5 "${source_folder}${target_folder}")
 	# check if we have exclude file
 	local exclude=''
-	if [ -f "${EXCLUDEPATH}${source_owner}" ]; then
-    exclude="--exclude-from='${EXCLUDEPATH}${source_owner}'"
+	if [ -f "${EXCLUDEPATH}${HASH}" ]; then
+    exclude="--include-from='${EXCLUDEPATH}${HASH}'"
 	fi
 	# we use rsync to do all the sync work (very smart)
 	rsync -qrd --delete "${exclude}" "${source_folder}/" "${target_folder}"
