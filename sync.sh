@@ -111,6 +111,11 @@ function repeat () {
 	head -c $1 < /dev/zero | tr '\0' $2
 }
 
+# simple basic random
+function getRandom () {
+    echo $(tr -dc 'A-HJ-NP-Za-km-z2-9' < /dev/urandom | dd bs=5 count=1 status=none)
+}
+
 # md5 strings
 function setMD5() {
   echo -n $1 | md5sum | awk '{print $1}'
@@ -383,7 +388,7 @@ function getExcluded () {
 		echo "${INPUT_EXCLUDE}" >> "$1"
 		# check if another should be added
 		echo ""
-		echo -ne "\n Would you like to add another exclution? [y/N]: "
+		echo -ne "\n Would you like to add another exclusion? [y/N]: "
 		read -r answer
 		if [[ $answer != "y" ]]; then
 			# end the loop
@@ -438,12 +443,45 @@ function syncFolder (){
 	# get hash
 	HASH=$(setMD5 "${source_folder}${target_folder}")
 	# check if we have exclude file
-	local exclude=''
+	local tmpName=$(getRandom)
+	local tmpPath="${HOMEPATH}.${tmpName}"
+	# local exclude=''
 	if [ -f "${EXCLUDEPATH}${HASH}" ]; then
-    exclude="--include-from='${EXCLUDEPATH}${HASH}'"
+
+##########################################################################
+# I tried doing this exclude with rsync but it just does not work (TODO)
+#	  while IFS= read -r line; do
+#      exclude+=" --exclude '${line}'"
+#    done < "${EXCLUDEPATH}${HASH}"
+# IF YOU CAN HELP LET ME KNOW
+#########################################################################
+
+    # make tmp dir
+    mkdir "$tmpPath"
+    # move file/folders out to tmp folder
+    for line in $(cat ${EXCLUDEPATH}${HASH}); do mv -f "${target_folder}/${line}" "$tmpPath"; done
 	fi
 	# we use rsync to do all the sync work (very smart)
-	rsync -qrd --delete "${exclude}" "${source_folder}/" "${target_folder}"
+  rsync -qrd --delete "${source_folder}/" "${target_folder}"
+
+##########################################################################
+# I tried doing this exclude with rsync but it just does not work (TODO)
+#	if [ ! ${#exclude} -ge 2 ]; then
+#	  rsync -qrd --delete "${source_folder}/" "${target_folder}"
+#	else
+#	  rsync -qrd $exclude --delete "${source_folder}/" "${target_folder}"
+#	fi
+# IF YOU CAN HELP LET ME KNOW
+#########################################################################
+
+	# move the files back
+	if [ -f "${EXCLUDEPATH}${HASH}" ]; then
+    # move file/folders out
+    for line in $(cat ${EXCLUDEPATH}${HASH}); do mv -f "$tmpPath/$line" "${target_folder}"; done
+    # remove tmp dir
+    rm -r "$tmpPath"
+  fi
+
 	# run chown again (will only work if script run as root)
 	chown -R "${target_owner}":"${target_owner}" "${target_folder}/"*
 	# done :)
