@@ -151,6 +151,8 @@ function setCron () {
 		fi
 		# set the user cron
 		crontab -u $ACTIVEUSER "${CRONPATH}"
+		# close the block
+		echo -e "\n ################################################################################################"
 	fi
 }
 
@@ -370,10 +372,19 @@ function syncFolders (){
 
 ### sync folder ###
 function syncFolder (){
-	local source_folder="$1"
-	local target_folder="$2"
-
-	echo "${source_folder}" "${target_folder}"
+	local source_folder=$(realpath -s $1)
+	local target_folder=$(realpath -s $2)
+  # get the owners
+	local source_owner=$(stat -c '%U' "${source_folder}")
+	local target_owner=$(stat -c '%U' "${target_folder}")
+  # give the user log data
+	echoTweak "Syncing folders of [${source_owner}] with [${target_owner}]..."
+	# we use rsync to do all the sync work (very smart)
+	rsync -qrd --delete "${source_folder}/" "${target_folder}"
+	# run chown again (will only work if script run as root)
+	chown -R "${target_owner}":"${target_owner}" "${target_folder}/"*
+	# done :)
+	echo "done"
 }
 
 ##############################################################
