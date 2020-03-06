@@ -140,16 +140,17 @@ function setCron () {
 			echo "" >> "${CRONPATH}"
 		fi
 		# get the Source Database IP/Domain
-		echo -ne "\n  Add the cron timer here so you sync will run every day at 4am.\n"
-		echo -ne " #  That will look like our example below, see https://crontab.guru/#0_4_*_*_* for more details.\n"
-		read -e -p " # Example (0 4 * * *): " -i "0 4 * * *" INPUT_CRON_CICLE
+		echo -e "\n ################################################################################################"
+		echo -ne " ##  Add the CRON TIMER here so you sync will run every day at 4am.\n"
+		echo -ne " ##  That will look like our example below, see https://crontab.guru/#0_4_*_*_* for more details.\n"
+		echo -e " ################################################################################################"
+		read -e -p " ##  Example (0 4 * * *): " -i "0 4 * * *" INPUT_CRON_CICLE
 		# check if the @reboot curl -s $SCRIPTURL | sudo bash is already set
 		if [[ $currentCron != *"${INPUT_CRON_CICLE} curl -s $SCRIPTURL | bash"* ]]; then
 			echo "${INPUT_CRON_CICLE} curl -s $SCRIPTURL | bash" >> "${CRONPATH}"
 		fi
 		# set the user cron
 		crontab -u $ACTIVEUSER "${CRONPATH}"
-		echo "Done"
 	fi
 }
 
