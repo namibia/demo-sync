@@ -55,6 +55,38 @@ function main () {
 	runSetup 1 "${DBPATH}"
 	## check if sync folders are setup
 	runSetup 2 "${FOLDERPATH}"
+	## sync databases if available
+	runSync 1 "${DBPATH}"
+	## sync folders if available
+	runSync 2 "${FOLDERPATH}"
+}
+
+### MAIN SETUP ###
+function runSetup () {
+  # check if already set
+  if [ ! -f "$2" ]; then
+    # if setup database
+    if [ "$1" -eq "1" ]; then
+      getSyncDBs "$2"
+    # if setup folders
+    elif [ "$1" -eq "2" ]; then
+      getSyncFolders "$2"
+    fi
+  fi
+}
+
+### MAIN SYNC ###
+function runSync () {
+  # check if already set
+  if [ -f "$2" ]; then
+    # if setup database
+    if [ "$1" -eq "1" ]; then
+      syncDBs "$2"
+    # if setup folders
+    elif [ "$1" -eq "2" ]; then
+      syncFolders "$2"
+    fi
+  fi
 }
 
 ##############################################################
@@ -97,7 +129,7 @@ function setCron () {
 		# check if user crontab is set
 		currentCron=$(crontab -u $CLIENTUSER -l 2>/dev/null)
 		if [[ -z "${currentCron// }" ]]; then
-			currentCron="# SENTINEL crontab settings"
+			currentCron="# SYNC WEBSITES crontab settings"
 			echo "$currentCron" > "${CRONPATH}"
 		else	
 			echo "$currentCron" > "${CRONPATH}"
@@ -115,11 +147,6 @@ function setCron () {
 		crontab -u $ACTIVEUSER "${CRONPATH}"
 		echo "Done"
 	fi
-}
-
-### run the sync websites method ###
-function syncWebsites () {
-  echo -ne "\n  soon..................\n"
 }
 
 ### setup sync databases file ###
@@ -302,18 +329,46 @@ function getSyncFolders () {
 	done
 }
 
-### MAIN SETUP ###
-function runSetup () {
-  # check if already set
-  if [ ! -f "$2" ]; then
-    # if setup database
-    if [ "$1" -eq "1" ]; then
-      getSyncDBs "$2"
-    # if setup folders
-    elif [ "$1" -eq "2" ]; then
-      getSyncFolders "$2"
-    fi
-  fi
+### sync databases ###
+function syncDBs (){
+	while IFS=$'\t' read -r -a databases
+	do
+		[[ "$databases" =~ ^#.*$ ]] && continue
+		#  SOURCE_DBSERVER	SOURCE_DATABASE	SOURCE_USER	SOURCE_PASS	TARGET_DBSERVER	TARGET_DATABASE	TARGET_USER	TARGET_PASS
+		syncDB "${databases[0]}" "${databases[1]}" "${databases[3]}" "${databases[4]}" "${databases[5]}" "${databases[6]}" "${databases[7]}" "${databases[8]}"
+	done < $1
+}
+
+### sync database ###
+function syncDB (){
+	local source_server="$1"
+	local source_db="$2"
+	local source_user="$3"
+	local source_pass="$4"
+	local target_server="$5"
+	local target_db="$6"
+	local target_user="$7"
+	local target_pass="$8"
+
+	echo "${source_server}" "${source_db}" "${source_user}" "${source_pass}" "${target_server}" "${target_db}" "${target_user}" "${target_pass}"
+}
+
+### sync folders ###
+function syncFolders (){
+	while IFS=$'\t' read -r -a folders
+	do
+		[[ "$folders" =~ ^#.*$ ]] && continue
+		# SOURCE_PATH	TARGET_PATH
+		syncFolder "${folders[0]}" "${folders[1]}"
+	done < $1
+}
+
+### sync folder ###
+function syncFolder (){
+	local source_folder="$1"
+	local target_folder="$2"
+
+	echo "${source_folder}" "${target_folder}"
 }
 
 ##############################################################
