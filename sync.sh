@@ -10,6 +10,12 @@
 #
 #/-----------------------------------------------------------------------------------------------------------------------------/
 
+##############################################################
+##############              CHECK                   ##########
+##############################################################
+command -v rsync >/dev/null 2>&1 || { echo >&2 "We require rsync for this script to run, but it's not installed.  Aborting."; exit 1; }
+command -v crontab >/dev/null 2>&1 || { echo >&2 "We require crontab for this script to run, but it's not installed.  Aborting."; exit 1; }
+
 ############################ GLOBAL ##########################
 ACTION="sync"
 OWNER="namibia"
@@ -37,6 +43,7 @@ BASENAME=".${ACTION}_${OWNER}"
 # set paths
 BASEPATH="${HOMEPATH}${BASENAME}"
 FOLDERPATH="${BASEPATH}_folders"
+EXCLUDEPATH="${BASEPATH}_ex_"
 DBPATH="${BASEPATH}_dbs"
 CRONPATH="${BASEPATH}.cron"
 
@@ -313,7 +320,7 @@ function getSyncFolders () {
 		fi
 		# get target folder path path
 		echo -ne "\n  Set the Target Folder Path\n"
-		echo -ne " # Example (/home/username_b/): "
+		echo -ne " # Example (/home/username_b): "
 		read -r INPUT_TARGET_PATH
 		# check that we have a target path
 		if [ ! -d "$INPUT_TARGET_PATH" ]; then
@@ -325,9 +332,45 @@ function getSyncFolders () {
 		fi
 		# add to the file
 		echo "${INPUT_SOURCE_PATH}	${INPUT_TARGET_PATH}" >> "$1"
+		# check if there are files or folders to exclude
+		SOURCE_OWNER=$(stat -c '%U' "${INPUT_SOURCE_PATH}")
+		getExcluded "${EXCLUDEPATH}${SOURCE_OWNER}"
 		# check if another should be added
 		echo ""
 		echo -ne "\n Would you like to add another set of sync folders? [y/N]: "
+		read -r answer
+		if [[ $answer != "y" ]]; then
+			# end the loop
+			GETTING=0
+		fi
+	done
+}
+
+### setup sync folders file ###
+function getExcluded () {
+	# default it no to run setup
+	GETTING=0
+  echo ""
+  echo -ne "\n Would you like to add excluded files/folders? [y/N]: "
+  read -r answer
+  if [[ $answer == "y" ]]; then
+    # start exclution
+    echo -ne "\n See for more details https://linuxize.com/post/how-to-exclude-files-and-directories-with-rsync/\n"
+    # set checker to get more
+    GETTING=1
+  fi
+	# start setup
+	while [ "$GETTING" -eq "1" ]
+	do
+		# get source folder path path
+		echo -ne "\n  Add file or folder to exclude\n"
+		echo -ne " # Example (configuration.php or administrator/*): "
+		read -r INPUT_EXCLUDE
+		# add to file
+		echo "${INPUT_EXCLUDE}" >> "$1"
+		# check if another should be added
+		echo ""
+		echo -ne "\n Would you like to add another exclution? [y/N]: "
 		read -r answer
 		if [[ $answer != "y" ]]; then
 			# end the loop
@@ -379,8 +422,13 @@ function syncFolder (){
 	local target_owner=$(stat -c '%U' "${target_folder}")
   # give the user log data
 	echoTweak "Syncing folders of [${source_owner}] with [${target_owner}]..."
+	# check if we have exclude file
+	local exclude=''
+	if [ -f "${EXCLUDEPATH}${source_owner}" ]; then
+    exclude="--exclude-from='${EXCLUDEPATH}${source_owner}'"
+	fi
 	# we use rsync to do all the sync work (very smart)
-	rsync -qrd --delete "${source_folder}/" "${target_folder}"
+	rsync -qrd --delete "${exclude}" "${source_folder}/" "${target_folder}"
 	# run chown again (will only work if script run as root)
 	chown -R "${target_owner}":"${target_owner}" "${target_folder}/"*
 	# done :)
