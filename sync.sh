@@ -31,6 +31,7 @@ REPOURL="https://raw.githubusercontent.com/${OWNER}/${REPONAME}/master/"
 ##############################################################
 Datetimenow=$(TZ=":ZULU" date +"%m/%d/%Y @ %R (UTC)" )
 SCRIPTURL="${REPOURL}$ACTION.sh"
+ACTIVEUSER=$(whoami)
 HOMEPATH=~/
 BASENAME=".${ACTION}_${OWNER}"
 # set paths
@@ -111,7 +112,7 @@ function setCron () {
 			echo "0 4 * * * curl -s $SCRIPTURL | bash" >> "${CRONPATH}"
 		fi
 		# set the user cron
-		crontab -u $CLIENTUSER "${CRONPATH}"
+		crontab -u $ACTIVEUSER "${CRONPATH}"
 		echo "Done"
 	fi
 }
