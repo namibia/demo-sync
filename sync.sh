@@ -32,9 +32,9 @@ REPOURL="https://raw.githubusercontent.com/${OWNER}/${REPONAME}/master/"
 Datetimenow=$(TZ=":ZULU" date +"%m/%d/%Y @ %R (UTC)" )
 SCRIPTURL="${REPOURL}$ACTION.sh"
 HOMEPATH=~/
-NAME=".${ACTION}_${OWNER}"
+BASENAME=".${ACTION}_${OWNER}"
 # set paths
-BASEPATH="${HOMEPATH}/${NAME}"
+BASEPATH="${HOMEPATH}/${BASENAME}"
 FOLDERPATH="${BASEPATH}_folders"
 DBPATH="${BASEPATH}_dbs"
 CRONPATH="${BASEPATH}.cron"
