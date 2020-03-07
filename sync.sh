@@ -416,6 +416,8 @@ function syncDBs (){
 
 ### sync database ###
 function syncDB (){
+  # give the user log data
+	echoTweak "Syncing databases of [$2] with [$6]..."
   #	local source_server="$1"
   #	local source_db="$2"
   #	local source_user="$3"
@@ -428,6 +430,8 @@ function syncDB (){
 	mysqldump --opt -q --host="$1" --user="$3" --password="$4" "$2" | \
   mysql --host="$5" --user="$7" --password="$8" -C "$6"
   # we may want to look at passing the password more securly (TODO)
+	# done :)
+	echo "done"
 }
 
 ### sync folders ###
