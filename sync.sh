@@ -403,22 +403,24 @@ function syncDBs (){
 	do
 		[[ "$databases" =~ ^#.*$ ]] && continue
 		#  SOURCE_DBSERVER	SOURCE_DATABASE	SOURCE_USER	SOURCE_PASS	TARGET_DBSERVER	TARGET_DATABASE	TARGET_USER	TARGET_PASS
-		syncDB "${databases[0]}" "${databases[1]}" "${databases[3]}" "${databases[4]}" "${databases[5]}" "${databases[6]}" "${databases[7]}" "${databases[8]}"
+		syncDB "${databases[0]}" "${databases[1]}" "${databases[2]}" "${databases[3]}" "${databases[4]}" "${databases[5]}" "${databases[6]}" "${databases[7]}"
 	done < $1
 }
 
 ### sync database ###
 function syncDB (){
-	local source_server="$1"
-	local source_db="$2"
-	local source_user="$3"
-	local source_pass="$4"
-	local target_server="$5"
-	local target_db="$6"
-	local target_user="$7"
-	local target_pass="$8"
-
-	echo "${source_server}" "${source_db}" "${source_user}" "${source_pass}" "${target_server}" "${target_db}" "${target_user}" "${target_pass}"
+  #	local source_server="$1"
+  #	local source_db="$2"
+  #	local source_user="$3"
+  #	local source_pass="$4"
+  #	local target_server="$5"
+  #	local target_db="$6"
+  #	local target_user="$7"
+  #	local target_pass="$8"
+  # move tables from one database to the other
+	mysqldump --opt -q --host="$1" --user="$3" --password="$4" "$2" | \
+  mysql --host="$5" --user="$7" --password="$8" -C "$6"
+  # we may want to look at passing the password more securly (TODO)
 }
 
 ### sync folders ###
