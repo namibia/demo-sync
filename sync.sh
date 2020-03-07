@@ -142,38 +142,45 @@ function echoTweak () {
 
 # Set cronjob without removing existing
 function setCron () {
-	if [ -f "${CRONPATH}" ]; then
-		echoTweak "Crontab already configured for updates..."
-		echo "Skipping"
-	else
-		echo "Adding crontab entry for continued updates..."
-		# check if user crontab is set
-		currentCron=$(crontab -u $CLIENTUSER -l 2>/dev/null)
-		if [[ -z "${currentCron// }" ]]; then
-			currentCron="# SYNC WEBSITES crontab settings"
-			echo "$currentCron" > "${CRONPATH}"
-		else	
-			echo "$currentCron" > "${CRONPATH}"
-		fi
-		# check if the MAILTO is already set
-		if [[ $currentCron != *"MAILTO"* ]]; then
-			echo "MAILTO=\"\"" >> "${CRONPATH}"
-			echo "" >> "${CRONPATH}"
-		fi
-		# get the Source Database IP/Domain
-		echo -e "\n ################################################################################################"
-		echo -ne " ##  Add the CRON TIMER here so you sync will run every day at 4am.\n"
-		echo -ne " ##  That will look like our example below, see https://crontab.guru/#0_4_*_*_* for more details.\n"
-		echo -e " ################################################################################################"
-		read -e -p " ##  Example (0 4 * * *): " -i "0 4 * * *" INPUT_CRON_CICLE
-		# check if the @reboot curl -s $SCRIPTURL | sudo bash is already set
-		if [[ $currentCron != *"${INPUT_CRON_CICLE} curl -s $SCRIPTURL | bash"* ]]; then
-			echo "${INPUT_CRON_CICLE} curl -s $SCRIPTURL | bash" >> "${CRONPATH}"
-		fi
-		# set the user cron
-		crontab -u $ACTIVEUSER "${CRONPATH}"
-		# close the block
-		echo -e "\n ################################################################################################"
+	if [ ! -f "${CRONPATH}" ]; then
+    echo ""
+    echo -ne "\n Would you like set the cronjob now? [y/N]: "
+    read -r answer
+    if [[ $answer == "y" ]]; then
+      # check if user crontab is set
+      currentCron=$(crontab -u $CLIENTUSER -l 2>/dev/null)
+      if [[ -z "${currentCron// }" ]]; then
+        currentCron="# SYNC WEBSITES crontab settings"
+        echo "$currentCron" > "${CRONPATH}"
+      else
+        echo "$currentCron" > "${CRONPATH}"
+      fi
+      # check if the MAILTO is already set
+      if [[ $currentCron != *"MAILTO"* ]]; then
+        echo "MAILTO=\"\"" >> "${CRONPATH}"
+        echo "" >> "${CRONPATH}"
+      fi
+      # get the Source Database IP/Domain
+      echo -e "\n ################################################################################################"
+      echo -ne " ##  Add the CRON TIMER here so you sync will run every day at 4am.\n"
+      echo -ne " ##  That will look like our example below, see https://crontab.guru/#0_4_*_*_* for more details.\n"
+      echo -e " ################################################################################################"
+      read -e -p " ##  Example (0 4 * * *): " -i "0 4 * * *" INPUT_CRON_CICLE
+      # check if the @reboot curl -s $SCRIPTURL | sudo bash is already set
+      if [[ $currentCron != *"${INPUT_CRON_CICLE} curl -s $SCRIPTURL | bash"* ]]; then
+        echo "${INPUT_CRON_CICLE} curl -s $SCRIPTURL | bash" >> "${CRONPATH}"
+      fi
+      # set the user cron
+      crontab -u $ACTIVEUSER "${CRONPATH}"
+      # close the block
+      echo -e "\n ################################################################################################"
+    else
+      # to avoid asking again
+      echo "See ${CRONPATH} for more details!"
+      echo '# Do not remove this file!' > "${CRONPATH}"
+      echo '# Please set your cronjob manually, with the following details' >> "${CRONPATH}"
+      echo "# 0 4 * * * curl -s $SCRIPTURL | bash" >> "${CRONPATH}"
+    fi
 	fi
 }
 
