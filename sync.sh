@@ -483,7 +483,10 @@ function syncFolder() {
 		# make tmp dir
 		mkdir "$tmpPath"
 		# move file/folders out to tmp folder
-		for line in $(cat ${EXCLUDEPATH}${HASH}); do line=$(echo $line | sed $'s/\r//'); mv -f $target_folder/$line $tmpPath; done
+		for line in $(cat ${EXCLUDEPATH}${HASH}); do
+			line=$(echo $line | sed $'s/\r//')
+			mv -f $target_folder/$line $tmpPath
+		done
 	fi
 	# we use rsync to do all the sync work (very smart)
 	rsync -qrd --delete "${source_folder}/" "${target_folder}"
@@ -501,7 +504,10 @@ function syncFolder() {
 	# move the files back
 	if [ -f "${EXCLUDEPATH}${HASH}" ]; then
 		# move file/folders out
-		for line in $(cat ${EXCLUDEPATH}${HASH}); do line=$(echo $line | sed $'s/\r//'); mv -f $tmpPath/$line $target_folder; done
+		for line in $(cat ${EXCLUDEPATH}${HASH}); do
+			line=$(echo $line | sed $'s/\r//')
+			mv -f $tmpPath/$line $target_folder
+		done
 		# remove tmp dir
 		rm -r "$tmpPath"
 	fi
